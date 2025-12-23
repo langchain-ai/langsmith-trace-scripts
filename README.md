@@ -13,8 +13,8 @@ Customers extract their trace and scrub sensitive data before sending:
 export LANGSMITH_API_KEY='your-api-key'
 ./extract_trace.sh 00000000-0000-0000-f319-b36446ca3f23
 
-# 2. Scrub PII
-./scrub_trace.sh trace_00000000-0000-0000-f319-b36446ca3f23.json "inputs.messages,inputs.email"
+# 2. Scrub PII (recursively redacts field names)
+./scrub_trace.sh trace_00000000-0000-0000-f319-b36446ca3f23.json "content,email"
 
 # 3. Review scrubbed file manually
 
@@ -50,7 +50,7 @@ Extract a trace by ID.
 
 ### `scrub_trace.sh`
 
-Redact PII fields from trace.
+Redact PII fields from trace using recursive field name matching.
 
 ```bash
 ./scrub_trace.sh <trace_file> "<field1>,<field2>,..."
@@ -59,15 +59,16 @@ Redact PII fields from trace.
 **Output:** `<trace_file>.scrubbed.json`
 
 **Common fields to redact:**
-- `inputs.messages` - User messages
-- `inputs.email` - Email addresses
-- `inputs.query` - Search queries
-- `outputs.text` - Generated text
-- `extra.metadata.session_id` - Session IDs
-- `extra.metadata.user_id` - User IDs
-- `extra.metadata.api_key` - API keys
+- `content` - Message content (finds all content fields)
+- `email` - Email addresses
+- `messages` - Entire message arrays
+- `query` - Search queries
+- `text` - Generated text
+- `session_id` - Session IDs
+- `user_id` - User IDs
+- `api_key` - API keys
 
-**Handles nested fields:** Use dot notation (e.g., `extra.metadata.api_key`)
+**Recursive matching:** Field names are matched at any depth in the JSON structure, including inside arrays and nested objects. For example, specifying `content` will redact all fields named `content` anywhere in the trace.
 
 ### `upload_trace.sh`
 
@@ -88,7 +89,7 @@ export LANGSMITH_API_KEY='lsv2_pt_...'
 
 # Scrub
 ./scrub_trace.sh trace_a1b2c3d4-5678-90ab-cdef-1234567890ab.json \
-  "inputs.messages,inputs.email,extra.metadata.session_id"
+  "content,email,session_id"
 
 # Review and send trace_a1b2c3d4-5678-90ab-cdef-1234567890ab.scrubbed.json to support
 ```

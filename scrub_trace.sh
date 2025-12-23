@@ -13,24 +13,27 @@ USAGE:
 
 ARGUMENTS:
     trace_file  - JSON file with extracted trace
-    fields      - Comma-separated field paths to redact
+    fields      - Comma-separated field names to redact (recursively)
 
 OUTPUT:
     Creates <trace_file>.scrubbed.json
 
 EXAMPLES:
-    # Redact messages and email
-    $0 trace.json "inputs.messages,inputs.email"
+    # Redact all 'content' and 'email' fields anywhere in the trace
+    $0 trace.json "content,email"
 
-    # Redact nested metadata
-    $0 trace.json "extra.metadata.api_key,outputs.user_data"
+    # Redact nested metadata fields
+    $0 trace.json "api_key,session_id,user_id"
 
 COMMON FIELDS:
-    inputs.messages              - Chat messages
-    inputs.email                 - Email addresses
-    outputs.text                 - Output text
-    extra.metadata.session_id    - Session IDs
-    extra.metadata.user_id       - User IDs
+    content      - Message content (finds all content fields)
+    email        - Email addresses
+    messages     - Entire messages arrays
+    session_id   - Session IDs
+    user_id      - User IDs
+    api_key      - API keys
+
+NOTE: Fields are matched recursively at any depth, including inside arrays.
 
 EOF
 }
@@ -67,28 +70,21 @@ echo "Output: $OUTPUT_FILE"
 echo "Fields: $FIELDS"
 echo ""
 
-# Build jq filter for nested redaction
+# Build jq filter for recursive redaction
 IFS=',' read -ra FIELD_LIST <<< "$FIELDS"
-JQ_FILTER='walk(if type == "object" then ('
+JQ_FILTER='walk(if type == "object" then'
 
 for field in "${FIELD_LIST[@]}"; do
     # Trim whitespace
     field="${field#"${field%%[![:space:]]*}"}"  # trim leading
     field="${field%"${field##*[![:space:]]}"}"  # trim trailing
 
-    # Build path array for getpath/setpath
-    IFS='.' read -ra PARTS <<< "$field"
-    JQ_PATH="["
-    for part in "${PARTS[@]}"; do
-        JQ_PATH="$JQ_PATH\"$part\","
-    done
-    JQ_PATH="${JQ_PATH%,}]"
-
-    JQ_FILTER="$JQ_FILTER if getpath($JQ_PATH) then setpath($JQ_PATH; \"[REDACTED]\") else . end |"
+    # Add recursive field check
+    JQ_FILTER="$JQ_FILTER if has(\"$field\") then .\"$field\" = \"[REDACTED]\" else . end |"
 done
 
 # Remove trailing pipe and close
-JQ_FILTER="${JQ_FILTER% |}) else . end)"
+JQ_FILTER="${JQ_FILTER% |} else . end)"
 
 # Apply redactions
 if ! jq "$JQ_FILTER" "$TRACE_FILE" > "$OUTPUT_FILE"; then
