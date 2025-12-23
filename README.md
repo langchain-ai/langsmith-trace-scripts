@@ -9,7 +9,7 @@ Simple bash scripts to extract, scrub, and upload LangSmith traces.
 ```bash
 # 1. Extract trace
 export LANGSMITH_API_KEY='your-customer-key'
-./extract_langsmith_run.sh 00000000-0000-0000-f319-b36446ca3f23
+./extract_trace.sh 00000000-0000-0000-f319-b36446ca3f23
 
 # 2. Scrub PII
 ./scrub_trace.sh trace_00000000-0000-0000-f319-b36446ca3f23.json "inputs.messages,inputs.email"
@@ -35,12 +35,12 @@ export LANGSMITH_API_KEY='your-langchain-key'
 
 ## Scripts
 
-### `extract_langsmith_run.sh`
+### `extract_trace.sh`
 
 Extract a trace by ID.
 
 ```bash
-./extract_langsmith_run.sh <trace_id> [output_file]
+./extract_trace.sh <trace_id> [output_file]
 ```
 
 **Output:** `trace_<id>.json`
@@ -81,7 +81,7 @@ Upload scrubbed trace to LangSmith project.
 export LANGSMITH_API_KEY='lsv2_pt_...'
 
 # Extract
-./extract_langsmith_run.sh a1b2c3d4-5678-90ab-cdef-1234567890ab
+./extract_trace.sh a1b2c3d4-5678-90ab-cdef-1234567890ab
 
 # Scrub
 ./scrub_trace.sh trace_a1b2c3d4-5678-90ab-cdef-1234567890ab.json \
@@ -105,7 +105,7 @@ export LANGSMITH_API_KEY='lsv2_pt_...'
 Each script has a `--help` flag:
 
 ```bash
-./extract_langsmith_run.sh --help
+./extract_trace.sh --help
 ./scrub_trace.sh --help
 ./upload_trace.sh --help
 ```
