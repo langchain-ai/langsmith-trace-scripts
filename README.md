@@ -23,12 +23,14 @@ export LANGSMITH_API_KEY='your-api-key'
 
 ### Upload
 
-LangChain team uploads the scrubbed trace:
+LangChain team uploads the scrubbed trace to a tracing project:
 
 ```bash
 export LANGSMITH_API_KEY='your-api-key'
 ./upload_trace.sh customer_trace.scrubbed.json "customer-issue-1234"
 ```
+
+The script will create a new tracing project with the specified name. You can delete the project later if needed.
 
 ## Requirements
 
@@ -72,11 +74,13 @@ Redact PII fields from trace using recursive field name matching.
 
 ### `upload_trace.sh`
 
-Upload scrubbed trace to LangSmith project.
+Upload scrubbed trace to a LangSmith tracing project.
 
 ```bash
 ./upload_trace.sh <trace_file> <project_name>
 ```
+
+Creates a new tracing project with the specified name and uploads all runs to it.
 
 ## Complete Example
 
@@ -94,12 +98,14 @@ export LANGSMITH_API_KEY='lsv2_pt_...'
 # Review and send trace_a1b2c3d4-5678-90ab-cdef-1234567890ab.scrubbed.json to support
 ```
 
-**Upload:**
+**Upload (creates new tracing project):**
 ```bash
 export LANGSMITH_API_KEY='lsv2_pt_...'
 
 ./upload_trace.sh trace_a1b2c3d4-5678-90ab-cdef-1234567890ab.scrubbed.json \
   "customer-acme-issue-5678"
+
+# Creates a tracing project named "customer-acme-issue-5678" with the uploaded runs
 ```
 
 ## Help
