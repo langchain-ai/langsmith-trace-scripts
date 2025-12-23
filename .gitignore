@@ -1,0 +1,19 @@
+# Claude artifacts
+.claude/
+
+# Test files
+*.test.json
+trace_*.json
+*.scrubbed.json
+*.backup
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
