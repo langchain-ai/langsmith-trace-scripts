@@ -4,26 +4,29 @@ Simple bash scripts to extract, scrub, and upload LangSmith traces.
 
 ## Quick Start
 
-### Customer Workflow
+### Extract and Scrub PII
+
+Customers extract their trace and scrub sensitive data before sending:
 
 ```bash
 # 1. Extract trace
-export LANGSMITH_API_KEY='your-customer-key'
+export LANGSMITH_API_KEY='your-api-key'
 ./extract_trace.sh 00000000-0000-0000-f319-b36446ca3f23
 
 # 2. Scrub PII
 ./scrub_trace.sh trace_00000000-0000-0000-f319-b36446ca3f23.json "inputs.messages,inputs.email"
 
-# 3. Review the scrubbed file manually
+# 3. Review scrubbed file manually
 
-# 4. Send trace_00000000-0000-0000-f319-b36446ca3f23.scrubbed.json to LangChain support
+# 4. Send trace_00000000-0000-0000-f319-b36446ca3f23.scrubbed.json to support
 ```
 
-### LangChain Team Workflow
+### Upload
+
+LangChain team uploads the scrubbed trace:
 
 ```bash
-# Upload customer's scrubbed trace
-export LANGSMITH_API_KEY='your-langchain-key'
+export LANGSMITH_API_KEY='your-api-key'
 ./upload_trace.sh customer_trace.scrubbed.json "customer-issue-1234"
 ```
 
@@ -76,8 +79,8 @@ Upload scrubbed trace to LangSmith project.
 
 ## Complete Example
 
+**Extract and Scrub PII:**
 ```bash
-# Customer side
 export LANGSMITH_API_KEY='lsv2_pt_...'
 
 # Extract
@@ -87,13 +90,11 @@ export LANGSMITH_API_KEY='lsv2_pt_...'
 ./scrub_trace.sh trace_a1b2c3d4-5678-90ab-cdef-1234567890ab.json \
   "inputs.messages,inputs.email,extra.metadata.session_id"
 
-# Review trace_a1b2c3d4-5678-90ab-cdef-1234567890ab.scrubbed.json
+# Review and send trace_a1b2c3d4-5678-90ab-cdef-1234567890ab.scrubbed.json to support
+```
 
-# Send to support
-
-# ---
-
-# LangChain team side
+**Upload:**
+```bash
 export LANGSMITH_API_KEY='lsv2_pt_...'
 
 ./upload_trace.sh trace_a1b2c3d4-5678-90ab-cdef-1234567890ab.scrubbed.json \
