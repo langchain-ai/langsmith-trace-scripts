@@ -6,7 +6,7 @@ Simple bash scripts to extract, scrub, and upload LangSmith traces.
 
 ### Extract and Scrub PII
 
-Customers extract their trace and scrub sensitive data before sending:
+Extract a trace and scrub sensitive data before sharing:
 
 ```bash
 # 1. Extract trace
@@ -18,16 +18,16 @@ export LANGSMITH_API_KEY='your-api-key'
 
 # 3. Review scrubbed file manually
 
-# 4. Send trace_00000000-0000-0000-f319-b36446ca3f23.scrubbed.json to support
+# 4. Share trace_00000000-0000-0000-f319-b36446ca3f23.scrubbed.json
 ```
 
 ### Upload
 
-LangChain team uploads the scrubbed trace to a tracing project:
+Upload a scrubbed trace to a tracing project:
 
 ```bash
 export LANGSMITH_API_KEY='your-api-key'
-./upload_trace.sh customer_trace.scrubbed.json "customer-issue-1234"
+./upload_trace.sh trace.scrubbed.json "debug-trace-123"
 ```
 
 The script will create a new tracing project with the specified name. You can delete the project later if needed.
@@ -95,7 +95,7 @@ export LANGSMITH_API_KEY='lsv2_pt_...'
 ./scrub_trace.sh trace_a1b2c3d4-5678-90ab-cdef-1234567890ab.json \
   "content,email,session_id"
 
-# Review and send trace_a1b2c3d4-5678-90ab-cdef-1234567890ab.scrubbed.json to support
+# Review and share trace_a1b2c3d4-5678-90ab-cdef-1234567890ab.scrubbed.json
 ```
 
 **Upload (creates new tracing project):**
@@ -103,9 +103,9 @@ export LANGSMITH_API_KEY='lsv2_pt_...'
 export LANGSMITH_API_KEY='lsv2_pt_...'
 
 ./upload_trace.sh trace_a1b2c3d4-5678-90ab-cdef-1234567890ab.scrubbed.json \
-  "customer-acme-issue-5678"
+  "debug-trace-2024-01"
 
-# Creates a tracing project named "customer-acme-issue-5678" with the uploaded runs
+# Creates a tracing project named "debug-trace-2024-01" with the uploaded runs
 ```
 
 ## Help
@@ -145,4 +145,4 @@ apt-get install jq  # Linux
 
 ## Important
 
-**Customers must manually review scrubbed files before sending** to ensure all PII is removed.
+**Always manually review scrubbed files before sharing** to ensure all PII is removed.
