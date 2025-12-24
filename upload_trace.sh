@@ -123,11 +123,14 @@ while read -r run; do
 
     # Replace all old IDs in dotted_order with new IDs
     if [ -n "$DOTTED_ORDER" ]; then
+        TEMP_MAPPINGS=$(mktemp)
+        jq -r 'to_entries[] | "\(.key):\(.value)"' "$TEMP_MAPPING" > "$TEMP_MAPPINGS"
         while IFS= read -r mapping; do
             OLD=$(echo "$mapping" | cut -d: -f1)
             NEW=$(echo "$mapping" | cut -d: -f2)
             NEW_DOTTED_ORDER=$(echo "$NEW_DOTTED_ORDER" | sed "s/$OLD/$NEW/g")
-        done < <(jq -r 'to_entries[] | "\(.key):\(.value)"' "$TEMP_MAPPING")
+        done < "$TEMP_MAPPINGS"
+        rm -f "$TEMP_MAPPINGS"
     fi
 
     # Get trace_id (root run's new ID)
