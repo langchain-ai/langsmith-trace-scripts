@@ -117,13 +117,32 @@ while read -r run; do
         echo ""
     fi)
 
+    # Update dotted_order with new run IDs
+    DOTTED_ORDER=$(echo "$run" | jq -r '.dotted_order // ""')
+    NEW_DOTTED_ORDER="$DOTTED_ORDER"
+
+    # Replace all old IDs in dotted_order with new IDs
+    if [ -n "$DOTTED_ORDER" ]; then
+        while IFS= read -r mapping; do
+            OLD=$(echo "$mapping" | cut -d: -f1)
+            NEW=$(echo "$mapping" | cut -d: -f2)
+            NEW_DOTTED_ORDER=$(echo "$NEW_DOTTED_ORDER" | sed "s/$OLD/$NEW/g")
+        done < <(jq -r 'to_entries[] | "\(.key):\(.value)"' "$TEMP_MAPPING")
+    fi
+
+    # Get trace_id (root run's new ID)
+    TRACE_ID=$(echo "$run" | jq -r '.trace_id // ""')
+    NEW_TRACE_ID=$(jq -r --arg id "$TRACE_ID" '.[$id] // $id' "$TEMP_MAPPING")
+
     # Update run with new IDs and session
     if [ -n "$NEW_PARENT_ID" ]; then
         run=$(echo "$run" | jq --arg sid "$SESSION_ID" --arg rid "$NEW_RUN_ID" --arg pid "$NEW_PARENT_ID" \
-            '.session_id = $sid | .id = $rid | .parent_run_id = $pid')
+            --arg dot "$NEW_DOTTED_ORDER" --arg tid "$NEW_TRACE_ID" \
+            '.session_id = $sid | .id = $rid | .parent_run_id = $pid | .dotted_order = $dot | .trace_id = $tid')
     else
         run=$(echo "$run" | jq --arg sid "$SESSION_ID" --arg rid "$NEW_RUN_ID" \
-            '.session_id = $sid | .id = $rid | del(.parent_run_id)')
+            --arg dot "$NEW_DOTTED_ORDER" --arg tid "$NEW_TRACE_ID" \
+            '.session_id = $sid | .id = $rid | del(.parent_run_id) | .dotted_order = $dot | .trace_id = $tid')
     fi
 
     RUN_ID=$(echo "$run" | jq -r '.id')
