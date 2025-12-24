@@ -63,17 +63,34 @@ echo "File: $TRACE_FILE"
 echo ""
 
 # Create project
-SESSION_RESP=$(curl -sf -X POST \
+TEMP_PROJ=$(mktemp)
+HTTP_CODE=$(curl -s -w "%{http_code}" -o "$TEMP_PROJ" \
+    -X POST \
     -H "x-api-key: $LANGSMITH_API_KEY" \
     -H "Content-Type: application/json" \
-    -d "{\"name\": \"$PROJECT_NAME\", \"description\": \"Customer debug trace\"}" \
-    "$API_BASE/api/v1/sessions" || echo '{"id":""}')
+    -d "{\"name\": \"$PROJECT_NAME\", \"description\": \"Uploaded trace\"}" \
+    "$API_BASE/api/v1/sessions")
 
-SESSION_ID=$(echo "$SESSION_RESP" | jq -r '.id')
+SESSION_RESP=$(cat "$TEMP_PROJ")
+SESSION_ID=$(echo "$SESSION_RESP" | jq -r '.id // ""')
 
-if [ -z "$SESSION_ID" ] || [ "$SESSION_ID" = "null" ] || [ "$SESSION_ID" = "" ]; then
-    echo "Error: Failed to create project"
-    echo "$SESSION_RESP"
+if [ "$HTTP_CODE" = "409" ]; then
+    echo "Error: Project '$PROJECT_NAME' already exists"
+    echo "Please choose a different project name or delete the existing project"
+    rm -f "$TEMP_PROJ"
+    exit 1
+elif [ "$HTTP_CODE" != "200" ] && [ "$HTTP_CODE" != "201" ]; then
+    echo "Error: Failed to create project (HTTP $HTTP_CODE)"
+    ERROR_MSG=$(echo "$SESSION_RESP" | jq -r '.error // .detail // "Unknown error"')
+    echo "$ERROR_MSG"
+    rm -f "$TEMP_PROJ"
+    exit 1
+fi
+
+rm -f "$TEMP_PROJ"
+
+if [ -z "$SESSION_ID" ] || [ "$SESSION_ID" = "null" ]; then
+    echo "Error: Failed to get project ID"
     exit 1
 fi
 
