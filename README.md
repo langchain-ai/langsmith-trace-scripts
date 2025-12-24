@@ -1,6 +1,6 @@
 # LangSmith Trace Export Tools
 
-Simple bash scripts to extract, scrub, and upload LangSmith traces.
+Bash scripts to extract, scrub, and upload LangSmith traces.
 
 ## Quick Start
 
