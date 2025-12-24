@@ -79,33 +79,21 @@ Creates a new tracing project with the specified name (if it doesn't exist) or u
 
 The trace file can be either a raw extracted trace or a scrubbed trace. You can upload multiple traces to the same project by using the same project name.
 
-## Complete Examples
+## Complete Example
 
-**Example 1: Extract and upload within same workspace**
-```bash
-export LANGSMITH_API_KEY='lsv2_pt_...'
-
-# Extract
-./extract_trace.sh a1b2c3d4-5678-90ab-cdef-1234567890ab
-
-# Upload to new project
-./upload_trace.sh trace_a1b2c3d4-5678-90ab-cdef-1234567890ab.json "my-debug-project"
-```
-
-**Example 2: Extract, scrub PII, and upload to different workspace**
 ```bash
 # Extract from source workspace
 export LANGSMITH_API_KEY='lsv2_pt_source_workspace_key'
 ./extract_trace.sh a1b2c3d4-5678-90ab-cdef-1234567890ab
 
-# Scrub sensitive data
+# Scrub sensitive data (optional)
 ./scrub_trace.sh trace_a1b2c3d4-5678-90ab-cdef-1234567890ab.json "content,email,api_key"
 
 # Review scrubbed file manually
 
 # Upload to destination workspace
 export LANGSMITH_API_KEY='lsv2_pt_destination_workspace_key'
-./upload_trace.sh trace_a1b2c3d4-5678-90ab-cdef-1234567890ab.scrubbed.json "shared-trace-123"
+./upload_trace.sh trace_a1b2c3d4-5678-90ab-cdef-1234567890ab.scrubbed.json "debug-project"
 ```
 
 ## Help
