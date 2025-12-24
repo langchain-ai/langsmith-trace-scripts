@@ -129,7 +129,8 @@ while read -r run; do
     RUN_ID=$(echo "$run" | jq -r '.id')
     RUN_NAME=$(echo "$run" | jq -r '.name')
 
-    HTTP_CODE=$(curl -s -w "%{http_code}" -o /dev/null \
+    TEMP_RESP=$(mktemp)
+    HTTP_CODE=$(curl -s -w "%{http_code}" -o "$TEMP_RESP" \
         -X POST \
         -H "x-api-key: $LANGSMITH_API_KEY" \
         -H "Content-Type: application/json" \
@@ -141,8 +142,10 @@ while read -r run; do
         echo "  ✓ [$UPLOADED/$TOTAL] $RUN_NAME"
     else
         FAILED=$((FAILED + 1))
-        echo "  ✗ Failed: $RUN_NAME (HTTP $HTTP_CODE)"
+        ERROR_MSG=$(cat "$TEMP_RESP" 2>/dev/null | jq -r '.error // .detail // "Unknown error"' 2>/dev/null || echo "Unknown error")
+        echo "  ✗ Failed: $RUN_NAME (HTTP $HTTP_CODE: $ERROR_MSG)"
     fi
+    rm -f "$TEMP_RESP"
 done < "$TEMP_RUNS"
 
 if [ $FAILED -gt 0 ]; then
