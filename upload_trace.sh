@@ -62,7 +62,7 @@ echo "Project: $PROJECT_NAME"
 echo "File: $TRACE_FILE"
 echo ""
 
-# Create project
+# Create or get existing project
 TEMP_PROJ=$(mktemp)
 HTTP_CODE=$(curl -s -w "%{http_code}" -o "$TEMP_PROJ" \
     -X POST \
@@ -75,11 +75,22 @@ SESSION_RESP=$(cat "$TEMP_PROJ")
 SESSION_ID=$(echo "$SESSION_RESP" | jq -r '.id // ""')
 
 if [ "$HTTP_CODE" = "409" ]; then
-    echo "Error: Project '$PROJECT_NAME' already exists"
-    echo "Please choose a different project name or delete the existing project"
-    rm -f "$TEMP_PROJ"
-    exit 1
-elif [ "$HTTP_CODE" != "200" ] && [ "$HTTP_CODE" != "201" ]; then
+    echo "Project '$PROJECT_NAME' already exists, using existing project..."
+    # Fetch existing project by name
+    SEARCH_RESP=$(curl -sf \
+        -H "x-api-key: $LANGSMITH_API_KEY" \
+        "$API_BASE/api/v1/sessions?name=$PROJECT_NAME")
+
+    SESSION_ID=$(echo "$SEARCH_RESP" | jq -r '.[0].id // ""')
+
+    if [ -z "$SESSION_ID" ] || [ "$SESSION_ID" = "null" ]; then
+        echo "Error: Could not find existing project '$PROJECT_NAME'"
+        rm -f "$TEMP_PROJ"
+        exit 1
+    fi
+elif [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "201" ]; then
+    echo "Created new project '$PROJECT_NAME'"
+else
     echo "Error: Failed to create project (HTTP $HTTP_CODE)"
     ERROR_MSG=$(echo "$SESSION_RESP" | jq -r '.error // .detail // "Unknown error"')
     echo "$ERROR_MSG"

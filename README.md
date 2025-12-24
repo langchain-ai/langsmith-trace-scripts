@@ -33,7 +33,7 @@ export LANGSMITH_API_KEY='your-destination-workspace-api-key'
 ./upload_trace.sh trace_00000000-0000-0000-f319-b36446ca3f23.json "YOUR_PROJECT_NAME"
 ```
 
-Replace `YOUR_PROJECT_NAME` with your desired tracing project name (e.g., `my-debug-trace`, `issue-123`, etc.). The script will create a new tracing project with this name and upload the runs to it.
+Replace `YOUR_PROJECT_NAME` with your desired tracing project name (e.g., `my-debug-trace`, `issue-123`, etc.). The script will create a new tracing project if it doesn't exist, or upload to an existing project with that name.
 
 **Note:** The trace will be uploaded to the workspace associated with your API key. If extracting from one workspace and uploading to another, use different API keys for each operation.
 
@@ -75,9 +75,9 @@ Upload a trace to a LangSmith tracing project.
 ./upload_trace.sh <trace_file> <project_name>
 ```
 
-Creates a new tracing project with the specified name and uploads all runs to it. Run IDs are automatically regenerated to avoid conflicts while preserving parent-child relationships.
+Creates a new tracing project with the specified name (if it doesn't exist) or uploads to an existing project. Run IDs are automatically regenerated to avoid conflicts while preserving parent-child relationships.
 
-The trace file can be either a raw extracted trace or a scrubbed trace.
+The trace file can be either a raw extracted trace or a scrubbed trace. You can upload multiple traces to the same project by using the same project name.
 
 ## Complete Examples
 
