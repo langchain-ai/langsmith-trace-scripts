@@ -88,13 +88,43 @@ echo ""
 UPLOADED=0
 FAILED=0
 TEMP_RUNS=$(mktemp)
-trap "rm -f $TEMP_RUNS" EXIT
+TEMP_MAPPING=$(mktemp)
+trap "rm -f $TEMP_RUNS $TEMP_MAPPING" EXIT
 
+# Build ID mapping (old_id -> new_id) to preserve parent-child relationships
+jq -c 'sort_by(.dotted_order)[]' "$TRACE_FILE" > "$TEMP_RUNS"
+echo "{}" > "$TEMP_MAPPING"
+
+while read -r run; do
+    OLD_ID=$(echo "$run" | jq -r '.id')
+    NEW_ID=$(uuidgen | tr '[:upper:]' '[:lower:]')
+    TEMP_MAP=$(jq --arg old "$OLD_ID" --arg new "$NEW_ID" '.[$old] = $new' "$TEMP_MAPPING")
+    echo "$TEMP_MAP" > "$TEMP_MAPPING"
+done < "$TEMP_RUNS"
+
+# Apply mapping and upload
 jq -c 'sort_by(.dotted_order)[]' "$TRACE_FILE" > "$TEMP_RUNS"
 
 while read -r run; do
-    # Add session_id
-    run=$(echo "$run" | jq --arg sid "$SESSION_ID" '.session_id = $sid')
+    OLD_ID=$(echo "$run" | jq -r '.id')
+    OLD_PARENT=$(echo "$run" | jq -r '.parent_run_id // ""')
+
+    # Get new IDs from mapping
+    NEW_RUN_ID=$(jq -r --arg id "$OLD_ID" '.[$id]' "$TEMP_MAPPING")
+    NEW_PARENT_ID=$(if [ -n "$OLD_PARENT" ] && [ "$OLD_PARENT" != "null" ]; then
+        jq -r --arg id "$OLD_PARENT" '.[$id] // ""' "$TEMP_MAPPING"
+    else
+        echo ""
+    fi)
+
+    # Update run with new IDs and session
+    if [ -n "$NEW_PARENT_ID" ]; then
+        run=$(echo "$run" | jq --arg sid "$SESSION_ID" --arg rid "$NEW_RUN_ID" --arg pid "$NEW_PARENT_ID" \
+            '.session_id = $sid | .id = $rid | .parent_run_id = $pid')
+    else
+        run=$(echo "$run" | jq --arg sid "$SESSION_ID" --arg rid "$NEW_RUN_ID" \
+            '.session_id = $sid | .id = $rid | del(.parent_run_id)')
+    fi
 
     RUN_ID=$(echo "$run" | jq -r '.id')
     RUN_NAME=$(echo "$run" | jq -r '.name')
@@ -109,9 +139,6 @@ while read -r run; do
     if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "201" ] || [ "$HTTP_CODE" = "202" ]; then
         UPLOADED=$((UPLOADED + 1))
         echo "  ✓ [$UPLOADED/$TOTAL] $RUN_NAME"
-    elif [ "$HTTP_CODE" = "409" ]; then
-        UPLOADED=$((UPLOADED + 1))
-        echo "  ⊘ [$UPLOADED/$TOTAL] $RUN_NAME (already exists)"
     else
         FAILED=$((FAILED + 1))
         echo "  ✗ Failed: $RUN_NAME (HTTP $HTTP_CODE)"

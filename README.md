@@ -32,6 +32,8 @@ export LANGSMITH_API_KEY='your-api-key'
 
 The script will create a new tracing project with the specified name. You can delete the project later if needed.
 
+**Note:** The trace will be uploaded to the workspace associated with your API key. Make sure you're using the correct API key for the intended workspace.
+
 ## Requirements
 
 - `bash`
@@ -80,7 +82,7 @@ Upload scrubbed trace to a LangSmith tracing project.
 ./upload_trace.sh <trace_file> <project_name>
 ```
 
-Creates a new tracing project with the specified name and uploads all runs to it.
+Creates a new tracing project with the specified name and uploads all runs to it. Run IDs are automatically regenerated to avoid conflicts while preserving parent-child relationships.
 
 ## Complete Example
 
