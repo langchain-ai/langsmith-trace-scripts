@@ -1,38 +1,41 @@
-# LangSmith Trace Export & PII Scrubbing
+# LangSmith Trace Export Tools
 
 Simple bash scripts to extract, scrub, and upload LangSmith traces.
 
 ## Quick Start
 
-### Extract and Scrub PII
+### Extract
 
-Extract a trace and scrub sensitive data before sharing:
+Extract a trace from LangSmith:
 
 ```bash
-# 1. Extract trace
-export LANGSMITH_API_KEY='your-api-key'
+export LANGSMITH_API_KEY='your-source-workspace-api-key'
 ./extract_trace.sh 00000000-0000-0000-f319-b36446ca3f23
+```
 
-# 2. Scrub PII (recursively redacts field names)
+### Scrub PII (Optional)
+
+If your trace contains sensitive data, scrub it before sharing:
+
+```bash
+# Recursively redacts field names
 ./scrub_trace.sh trace_00000000-0000-0000-f319-b36446ca3f23.json "content,email"
 
-# 3. Review scrubbed file manually
-
-# 4. Share trace_00000000-0000-0000-f319-b36446ca3f23.scrubbed.json
+# Review scrubbed file manually before sharing
 ```
 
 ### Upload
 
-Upload a scrubbed trace to a tracing project:
+Upload a trace to a tracing project:
 
 ```bash
-export LANGSMITH_API_KEY='your-api-key'
-./upload_trace.sh trace.scrubbed.json "debug-trace-123"
+export LANGSMITH_API_KEY='your-destination-workspace-api-key'
+./upload_trace.sh trace_00000000-0000-0000-f319-b36446ca3f23.json "YOUR_PROJECT_NAME"
 ```
 
-The script will create a new tracing project with the specified name. You can delete the project later if needed.
+Replace `YOUR_PROJECT_NAME` with your desired tracing project name (e.g., `my-debug-trace`, `issue-123`, etc.). The script will create a new tracing project with this name and upload the runs to it.
 
-**Note:** The trace will be uploaded to the workspace associated with your API key. Make sure you're using the correct API key for the intended workspace.
+**Note:** The trace will be uploaded to the workspace associated with your API key. If extracting from one workspace and uploading to another, use different API keys for each operation.
 
 ## Requirements
 
@@ -62,21 +65,11 @@ Redact PII fields from trace using recursive field name matching.
 
 **Output:** `<trace_file>.scrubbed.json`
 
-**Common fields to redact:**
-- `content` - Message content (finds all content fields)
-- `email` - Email addresses
-- `messages` - Entire message arrays
-- `query` - Search queries
-- `text` - Generated text
-- `session_id` - Session IDs
-- `user_id` - User IDs
-- `api_key` - API keys
-
-**Recursive matching:** Field names are matched at any depth in the JSON structure, including inside arrays and nested objects. For example, specifying `content` will redact all fields named `content` anywhere in the trace.
+Field names are matched recursively at any depth in the JSON structure, including inside arrays and nested objects. For example, specifying `content` will redact all fields named `content` anywhere in the trace.
 
 ### `upload_trace.sh`
 
-Upload scrubbed trace to a LangSmith tracing project.
+Upload a trace to a LangSmith tracing project.
 
 ```bash
 ./upload_trace.sh <trace_file> <project_name>
@@ -84,30 +77,35 @@ Upload scrubbed trace to a LangSmith tracing project.
 
 Creates a new tracing project with the specified name and uploads all runs to it. Run IDs are automatically regenerated to avoid conflicts while preserving parent-child relationships.
 
-## Complete Example
+The trace file can be either a raw extracted trace or a scrubbed trace.
 
-**Extract and Scrub PII:**
+## Complete Examples
+
+**Example 1: Extract and upload within same workspace**
 ```bash
 export LANGSMITH_API_KEY='lsv2_pt_...'
 
 # Extract
 ./extract_trace.sh a1b2c3d4-5678-90ab-cdef-1234567890ab
 
-# Scrub
-./scrub_trace.sh trace_a1b2c3d4-5678-90ab-cdef-1234567890ab.json \
-  "content,email,session_id"
-
-# Review and share trace_a1b2c3d4-5678-90ab-cdef-1234567890ab.scrubbed.json
+# Upload to new project
+./upload_trace.sh trace_a1b2c3d4-5678-90ab-cdef-1234567890ab.json "my-debug-project"
 ```
 
-**Upload (creates new tracing project):**
+**Example 2: Extract, scrub PII, and upload to different workspace**
 ```bash
-export LANGSMITH_API_KEY='lsv2_pt_...'
+# Extract from source workspace
+export LANGSMITH_API_KEY='lsv2_pt_source_workspace_key'
+./extract_trace.sh a1b2c3d4-5678-90ab-cdef-1234567890ab
 
-./upload_trace.sh trace_a1b2c3d4-5678-90ab-cdef-1234567890ab.scrubbed.json \
-  "debug-trace-2024-01"
+# Scrub sensitive data
+./scrub_trace.sh trace_a1b2c3d4-5678-90ab-cdef-1234567890ab.json "content,email,api_key"
 
-# Creates a tracing project named "debug-trace-2024-01" with the uploaded runs
+# Review scrubbed file manually
+
+# Upload to destination workspace
+export LANGSMITH_API_KEY='lsv2_pt_destination_workspace_key'
+./upload_trace.sh trace_a1b2c3d4-5678-90ab-cdef-1234567890ab.scrubbed.json "shared-trace-123"
 ```
 
 ## Help
@@ -120,10 +118,11 @@ Each script has a `--help` flag:
 ./upload_trace.sh --help
 ```
 
-## EU Region
+## Regional Endpoints
 
-Set `LANGSMITH_ENDPOINT` for EU:
+By default, scripts use the US region (`https://api.smith.langchain.com`). For other regions, set `LANGSMITH_ENDPOINT`:
 
+**EU Region:**
 ```bash
 export LANGSMITH_ENDPOINT='https://eu.api.smith.langchain.com'
 ```
@@ -147,4 +146,4 @@ apt-get install jq  # Linux
 
 ## Important
 
-**Always manually review scrubbed files before sharing** to ensure all PII is removed.
+**If scrubbing PII, always manually review the scrubbed file before sharing** to ensure all sensitive data is properly removed.
